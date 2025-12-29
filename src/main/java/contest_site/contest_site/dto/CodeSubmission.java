@@ -1,4 +1,4 @@
-package contest_site.contest_site.model;
+package contest_site.contest_site.dto;
 
 import lombok.Getter;
 import lombok.Setter;

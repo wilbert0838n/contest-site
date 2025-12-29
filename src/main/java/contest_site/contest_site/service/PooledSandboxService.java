@@ -1,5 +1,6 @@
 package contest_site.contest_site.service;
 
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -10,14 +11,16 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+@Primary
 @Service
-public class PooledSandboxService {
+public class PooledSandboxService implements CodeRunnerService {
     private final ContainerPoolManager poolManager;
     private static final String TEMP_DIR = System.getProperty("user.dir") + "/temp_code_folder";
 
     public PooledSandboxService(ContainerPoolManager poolManager) {
         this.poolManager = poolManager;
     }
+
     private String readStream(InputStream stream) {
         return new BufferedReader(new InputStreamReader(stream))
                 .lines().collect(Collectors.joining("\n"));
@@ -51,10 +54,22 @@ public class PooledSandboxService {
             if (compileProc.exitValue() != 0) return "Compilation Failed";
 
             // 4. EXECUTE
-            String runCmd = "docker exec " + containerId + " java -cp /app Main";
+            String runCmd = "docker exec -i " + containerId + " java -cp /app Main";
             Process runProc = Runtime.getRuntime().exec(runCmd);
 
-            if (!runProc.waitFor(5, TimeUnit.SECONDS)) return "Time Limit Exceeded (Runtime)";
+            // --- PROVIDE INPUT HERE ---
+            String userInput = "10"; // Example input: "10 20"
+            try (OutputStream stdin = runProc.getOutputStream()) {
+                // Write the input bytes to the Docker process
+                stdin.write(userInput.getBytes());
+                stdin.flush();
+                // Closing the stream sends EOF (End of File), telling the program "Input is finished"
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            if (!runProc.waitFor(5, TimeUnit.SECONDS))
+                return "Time Limit Exceeded (Runtime)";
 
             // Capture Output
             String output = readStream(runProc.getInputStream());

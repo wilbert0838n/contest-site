@@ -1,16 +1,16 @@
 package contest_site.contest_site.controller;
-import contest_site.contest_site.model.CodeSubmission;
-import contest_site.contest_site.service.DockerSandboxService;
-import contest_site.contest_site.service.PooledSandboxService;
+import contest_site.contest_site.dto.CodeSubmission;
+import contest_site.contest_site.service.CodeRunnerService;
+
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/sandbox")
 public class SandboxController {
 
-    private final PooledSandboxService sandboxService;
+    private final CodeRunnerService sandboxService;
 
-    public SandboxController(PooledSandboxService sandboxService) {
+    public SandboxController(CodeRunnerService sandboxService) {
         this.sandboxService = sandboxService;
     }
 
