@@ -1,8 +1,6 @@
 package contest_site.contest_site.service;
-
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
-
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -48,13 +46,15 @@ public class PooledSandboxService implements CodeRunnerService {
             runCommand("docker", "cp", localPath.toString(), containerId + ":/app/Main.java");
 
             // 3. COMPILE
-            String compileCmd = "docker exec " + containerId + " javac /app/Main.java";
+            String[] compileCmd = {"docker","exec",containerId,"javac", "/app/Main.java"};
             Process compileProc =  Runtime.getRuntime().exec(compileCmd);
             if (!compileProc.waitFor(10, TimeUnit.SECONDS)) return "Time Limit Exceeded (Compilation)";
-            if (compileProc.exitValue() != 0) return "Compilation Failed";
+            if (compileProc.exitValue() != 0){
+                return "Compilation Failed";
+            }
 
             // 4. EXECUTE
-            String runCmd = "docker exec -i " + containerId + " java -cp /app Main";
+            String[] runCmd = {"docker", "exec", "-i",containerId, "java", "-cp", "/app","Main"};
             Process runProc = Runtime.getRuntime().exec(runCmd);
 
             // --- PROVIDE INPUT HERE ---
