@@ -1,23 +1,26 @@
 package contest_site.contest_site.service;
+import contest_site.contest_site.model.Submission;
+import contest_site.contest_site.model.TestCase;
+import jakarta.transaction.Transactional;
+import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Primary
 @Service
+@AllArgsConstructor
 public class PooledSandboxService implements CodeRunnerService {
     private final ContainerPoolManager poolManager;
-    private static final String TEMP_DIR = System.getProperty("user.dir") + "/temp_code_folder";
 
-    public PooledSandboxService(ContainerPoolManager poolManager) {
-        this.poolManager = poolManager;
-    }
+    private static final String TEMP_DIR = System.getProperty("user.dir") + "/temp_code_folder";
 
     private String readStream(InputStream stream) {
         return new BufferedReader(new InputStreamReader(stream))
@@ -28,64 +31,94 @@ public class PooledSandboxService implements CodeRunnerService {
         new ProcessBuilder(command).start().waitFor();
     }
 
-    public String runCode(String userCode) throws IOException, InterruptedException {
-        // 1. Get a fresh container from the pool (Fast!)
-        String containerId = poolManager.getContainer();
+    @Transactional //auto saves when dirtied
+    public void runCode(Submission submission) throws IOException, InterruptedException {
+        Language lang = submission.getLanguage();
+        String containerId = poolManager.getContainer(lang);
 
         // Setup local file
-        String uniqueFileName = "Main_" + UUID.randomUUID() + ".java";
+        String uniqueFileName = "Main_" + UUID.randomUUID() + "."+lang.toString().toLowerCase();
         Path localPath = Paths.get(TEMP_DIR, uniqueFileName);
         // Ensure dir exists
         new File(TEMP_DIR).mkdirs();
-        Files.write(localPath, userCode.getBytes());
+        try {
+            Files.write(localPath,submission.getCode().getBytes());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         try {
-            // 2. COPY code into container
+
+            //Copy code into container
             // Command: docker cp local/Main_123.java containerId:/app/Main.java
             runCommand("docker", "exec", containerId, "mkdir", "-p", "/app"); // Ensure /app exists
-            runCommand("docker", "cp", localPath.toString(), containerId + ":/app/Main.java");
+            runCommand("docker", "cp", localPath.toString(), containerId + ":/app/"+lang.getFileName());
 
-            // 3. COMPILE
-            String[] compileCmd = {"docker","exec",containerId,"javac", "/app/Main.java"};
-            Process compileProc =  Runtime.getRuntime().exec(compileCmd);
-            if (!compileProc.waitFor(10, TimeUnit.SECONDS)) return "Time Limit Exceeded (Compilation)";
-            if (compileProc.exitValue() != 0){
-                return "Compilation Failed";
+            //Compilation Process Starts Here
+            String[] compileCommand= lang.getCompileCommand(containerId);
+            if(compileCommand!=null){
+                Process compileProc =  Runtime.getRuntime().exec(compileCommand);
+                if (!compileProc.waitFor(10, TimeUnit.SECONDS)){
+                    submission.setVerdict("Compile Time exceeded");
+                    return;
+                }
+                if (compileProc.exitValue() != 0){
+                    submission.setVerdict("Compilation Failed");
+                    return;
+                }
+            }
+            //Compilation Process Ends Here
+
+            //Execution Process Starts Here
+            String[] runCommand= lang.getRunCommand(containerId);
+            List<TestCase> testCases=submission.getProblem().getTestCases();
+
+            for(TestCase testCase:testCases){
+
+                Process runProc = Runtime.getRuntime().exec(runCommand);
+
+                try (OutputStream stdin = runProc.getOutputStream()) {
+                    // Write the input bytes to the Docker process
+                    stdin.write(testCase.getInputContent().getBytes());
+                    stdin.flush();
+                    // Closing the stream sends EOF (End of File), telling the program "Input is finished"
+                } catch (IOException e) {
+                    System.out.println("Error while inputting testcase: "+e.getMessage());
+                    submission.setVerdict("Error while inputting testcase");
+                    return;
+                }
+
+                if(!runProc.waitFor(5, TimeUnit.SECONDS)){
+                    submission.setVerdict("Time Limit Exceeded");
+                    return;
+                }
+
+                //store output and error
+                String output = readStream(runProc.getInputStream());
+                String error = readStream(runProc.getErrorStream());
+                if(error.isEmpty()){
+                    if(!output.equals(testCase.getOutputContent())){
+                        submission.setVerdict("Wrong Answer");
+                        return;
+                    }
+                }
+                else{
+                    System.out.println("Runtime error: "+error);
+                    submission.setVerdict("Runtime Error");
+                    return;
+                }
             }
 
-            // 4. EXECUTE
-            String[] runCmd = {"docker", "exec", "-i",containerId, "java", "-cp", "/app","Main"};
-            Process runProc = Runtime.getRuntime().exec(runCmd);
-
-            // --- PROVIDE INPUT HERE ---
-            String userInput = "10"; // Example input: "10 20"
-            try (OutputStream stdin = runProc.getOutputStream()) {
-                // Write the input bytes to the Docker process
-                stdin.write(userInput.getBytes());
-                stdin.flush();
-                // Closing the stream sends EOF (End of File), telling the program "Input is finished"
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            if (!runProc.waitFor(5, TimeUnit.SECONDS))
-                return "Time Limit Exceeded (Runtime)";
-
-            // Capture Output
-            String output = readStream(runProc.getInputStream());
-            String error = readStream(runProc.getErrorStream());
-            return error.isEmpty() ? output : error;
+            submission.setVerdict("All Testcase Passed");
+            //Execution Process Ends Here
 
         } finally {
-            // 5. CLEANUP (CRITICAL)
-            // We destroy the container because it's now "dirty"
+            // We destroy the container because it's now dirty
             // The PoolManager has already started creating a replacement in the background
             new ProcessBuilder("docker", "rm", "-f", containerId).start();
-
             // Delete local temp file
             Files.deleteIfExists(localPath);
         }
     }
-
 
 }

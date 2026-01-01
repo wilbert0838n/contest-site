@@ -1,4 +1,5 @@
 package contest_site.contest_site.model;
+import contest_site.contest_site.service.Language;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -16,13 +17,14 @@ public class Submission {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     public Long id;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    public String language;
+    public Language language;
 
     @Column(columnDefinition = "TEXT")
     public String code;
 
-    private String verdict; // "ACCEPTED", "WRONG_ANSWER", "PENDING", "ERROR"
+    private String verdict;
 
     private Double executionTime;
 

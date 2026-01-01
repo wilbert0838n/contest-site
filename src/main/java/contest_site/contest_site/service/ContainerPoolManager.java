@@ -4,36 +4,40 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.springframework.stereotype.Component;
 import java.io.IOException;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 @Component
 public class ContainerPoolManager {
 
-    private static final int POOL_SIZE = 5; // Keep 5 containers ready
-    private static final String IMAGE = "eclipse-temurin:17-jdk-alpine";
+    private final Map<Language,BlockingQueue<String>> containerPools = new ConcurrentHashMap<>();
 
-    // A thread-safe Queue holding ID Strings of running containers
-    private final BlockingQueue<String> availableContainers = new LinkedBlockingQueue<>(POOL_SIZE);
-
-    // 1. STARTUP: Fill the pool when Spring Boot starts
-    @PostConstruct
+    @PostConstruct //after spring boot initializes, start filling pool
     public void initializePool() {
-        System.out.println("--- Initializing Container Pool ---");
-        for (int i = 0; i < POOL_SIZE; i++) {
-            createNewContainerAsync();
+
+        for(Language lang : Language.values()) {
+            containerPools.put(
+                    lang,
+                    new LinkedBlockingQueue<>(lang.getPoolSize())
+            );
+
+            System.out.println("Filling "+lang+" Container Pool");
+            for (int i = 0; i < lang.getPoolSize(); i++) {
+                createNewContainerAsync(lang);
+            }
         }
     }
 
-    // 2. GET: Service calls this to get a container ID
-    public String getContainer() {
+    public String getContainer(Language language) {
         try {
-            // .take() waits if queue is empty (Thread Safe)
-            String containerId = availableContainers.take();
-            // Trigger a refill in the background immediately
-            createNewContainerAsync();
+            String containerId = containerPools.get(language).take(); // .take() waits if queue is empty
+            CompletableFuture.runAsync(() -> {
+                createNewContainerAsync(language);
+            });
             return containerId;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -41,48 +45,48 @@ public class ContainerPoolManager {
         }
     }
 
-    // 3. REFILL: Creates a new container in the background
-    private void createNewContainerAsync() {
-        CompletableFuture.runAsync(() -> {
+    private void createNewContainerAsync(Language language) {
+
             try {
-                String containerId = createContainer();
-                availableContainers.put(containerId); // Add to queue
-                System.out.println("Pool Refilled. Available: " + availableContainers.size());
+                String containerId = createContainer(language);
+                containerPools.get(language).put(containerId);
+                System.out.println(language.toString()+" Pool Refilled. Available: " +
+                        containerPools.get(language).size());
+
             } catch (Exception e) {
-                e.printStackTrace();
+                System.out.println("Error in Async container creation: "+e.getMessage());
             }
-        });
+
     }
 
-    // The actual Docker Command to start a generic "sleeping" container
-    private String createContainer() throws IOException {
+    private String createContainer(Language lang) throws IOException {
         String containerName = "sandbox-" + UUID.randomUUID().toString();
 
-        // Command: docker run -d --name uuid eclipse-temurin tail -f /dev/null
-        // "tail -f /dev/null" keeps the container running forever doing nothing
+        // invoke the container and keep it alive
         ProcessBuilder pb = new ProcessBuilder(
                 "docker", "run",
-                "-d",                      // Detached (background)
-                "--name", containerName,   // Unique Name
-                IMAGE,
-                "tail", "-f", "/dev/null"  // Keep alive command
+                "-d",
+                "--name", containerName,
+                lang.getDockerImage(),
+                "tail", "-f", "/dev/null"
         );
 
         Process p = pb.start();
-        // Read the Container ID (Docker prints it to stdout)
         String containerId = new String(p.getInputStream().readAllBytes()).trim();
-        return containerName; // We return the name to refer to it later
+        return containerName;
     }
 
-    // 4. SHUTDOWN: Cleanup all containers when Server stops
+
     @PreDestroy
     public void cleanup() {
-        System.out.println("--- Killing all Pooled Containers ---");
-        for (String id : availableContainers) {
-            try {
-                new ProcessBuilder("docker", "rm", "-f", id).start();
-            } catch (IOException e) {
-                e.printStackTrace();
+        for(Language lang : Language.values()) {
+            System.out.println("Deleting containers in pool of language "+lang);
+            for (String id : containerPools.get(lang)) {
+                try {
+                    new ProcessBuilder("docker", "rm", "-f", id).start();
+                } catch (IOException e) {
+                    System.out.println("Error cleaning up container: "+e.getMessage());
+                }
             }
         }
     }

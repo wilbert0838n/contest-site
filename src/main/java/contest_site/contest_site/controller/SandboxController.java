@@ -1,25 +1,26 @@
 package contest_site.contest_site.controller;
 import contest_site.contest_site.dto.CodeSubmission;
-import contest_site.contest_site.service.CodeRunnerService;
-
+import contest_site.contest_site.model.Submission;
+import contest_site.contest_site.service.SubmissionService;
+import lombok.AllArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/sandbox")
+@RequestMapping("/api/submissions")
+@AllArgsConstructor
 public class SandboxController {
 
-    private final CodeRunnerService sandboxService;
+    private final SubmissionService submissionService;
 
-    public SandboxController(CodeRunnerService sandboxService) {
-        this.sandboxService = sandboxService;
-    }
-
-    @PostMapping("/run")
+    @PostMapping
     public String execute(@RequestBody CodeSubmission submission) {
         try {
-            return sandboxService.runCode(submission.getCode());
-        } catch (Exception e) {
-            return "Server Error: " + e.getMessage();
+            Submission sub=submissionService.submitCode(submission);
+            return sub.getVerdict();
+        } catch (Exception e){
+            System.out.println("Controller side error: " + e.getMessage());
         }
+        return "Controller side error";
     }
 }
