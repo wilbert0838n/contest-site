@@ -13,8 +13,14 @@ public class Problem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = true)
+    private Long contestId;
+
     @Column(columnDefinition = "TEXT",nullable = false)
     private String problemName;
+
+    @Column(nullable = true)
+    private String difficulty;
 
     @Column(columnDefinition = "TEXT",nullable = false)
     private String description;
@@ -24,6 +30,8 @@ public class Problem {
 
     @Column(columnDefinition = "TEXT",nullable = false)
     private String outputFormat;
+
+
 
     @Column(nullable = false)
     private boolean isMultipleSolutionAllowed;
@@ -36,6 +44,9 @@ public class Problem {
 
     @Column(nullable = false)
     private Integer spaceLimit;
+
+    @OneToMany(mappedBy = "problem",cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    List<Example> examples;
 
     @OneToMany(mappedBy = "problem", cascade = CascadeType.ALL,fetch = FetchType.LAZY)
     List<TestCase> testCases;
