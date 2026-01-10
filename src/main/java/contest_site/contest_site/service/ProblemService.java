@@ -17,6 +17,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ProblemService {
     private final ProblemRepository problemRepository;
+    private final SubmissionRepository submissionRepository;
 
     public ProblemDTO getProblemById(Long problemId) {
         Problem problem = problemRepository.findById(problemId).orElse(null);
@@ -49,6 +50,20 @@ public class ProblemService {
         problemDTO.setOutputFormat(problem.getOutputFormat());
         problemDTO.setTimeLimit(problem.getTimeLimit());
         problemDTO.setSpaceLimit(problem.getSpaceLimit());
+
+        Integer totalSubmissions = submissionRepository.countByProblemId(problem.getId());
+        Integer correctSubmissions = submissionRepository.countByProblemIdAndVerdict(problem.getId(),"All Testcase Passed");
+        if (totalSubmissions > 0) {
+            double accuracy = ((double) correctSubmissions / totalSubmissions) * 100.0;
+            accuracy = Math.round(accuracy * 100.0) / 100.0;
+
+            problemDTO.setAccuracy(accuracy);
+        } else {
+            problemDTO.setAccuracy(0.0);
+        }
+
+        problemDTO.setTotal(totalSubmissions);
+        problemDTO.setSolved(correctSubmissions);
 
         List<ExampleDTO> exampleDTOS = new ArrayList<>();
         for(Example example : problem.getExamples()){

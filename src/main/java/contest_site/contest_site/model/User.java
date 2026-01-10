@@ -26,6 +26,8 @@ public class User {
     @Column(nullable = true)
     private String password;
 
+    private Integer rating=1200;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL,fetch = FetchType.LAZY)
     private List<Submission> submissions;
 
