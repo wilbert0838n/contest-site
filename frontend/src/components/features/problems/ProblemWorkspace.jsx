@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Play, Check, X, Users, Eye } from 'lucide-react';
 import { problemData, successfulSubmissions } from '../../../data/mockData';
+import {API_BASE_URL} from '../../../config';
 
 export default function ProblemWorkspace({ problem, onBack, onSelectSubmission, isLoggedIn, setIsLoggedIn, onShowAuth }) {
     const [activeTab, setActiveTab] = useState('problem');
@@ -16,7 +17,7 @@ export default function ProblemWorkspace({ problem, onBack, onSelectSubmission, 
     useEffect(() => {
         if (activeTab === 'submissions' && isLoggedIn) {
             // FETCH ONLY SUCCESSFUL ONES
-            fetch(`/api/submissions/problem/${problem.id}/successful`, {
+            fetch(`${API_BASE_URL}/api/submissions/problem/${problem.id}/successful`, {
                 credentials: 'include'
             })
                 .then(res => res.json())
@@ -42,7 +43,7 @@ export default function ProblemWorkspace({ problem, onBack, onSelectSubmission, 
         };
 
         try {
-            const response = await fetch('/api/run', {
+            const response = await fetch(`${API_BASE_URL}/api/run`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',

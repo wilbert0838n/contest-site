@@ -31,8 +31,6 @@ public class Problem {
     @Column(columnDefinition = "TEXT",nullable = false)
     private String outputFormat;
 
-
-
     @Column(nullable = false)
     private boolean isMultipleSolutionAllowed;
 

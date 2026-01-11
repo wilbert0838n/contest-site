@@ -5,7 +5,7 @@ import AuthModal from './components/common/AuthModal';
 import Leaderboard from './components/features/leaderboard/Leaderboard';
 import ProblemWorkspace from './components/features/problems/ProblemWorkspace';
 import HackingView from './components/features/hacking/HackingView';
-
+import { API_BASE_URL } from './config';
 
 const initialWeeks = [
   { id: 1, title: "Week 1 - Arrays & Strings", problems: [] }
@@ -47,7 +47,7 @@ export default function App() {
 
   // --- Auth Effects ---
   useEffect(() => {
-    fetch('/api/me', {
+    fetch(`${API_BASE_URL}/api/me`, {
       credentials: 'include' // IMPORTANT: Sends the Session Cookie to backend
     })
       .then(response => {
@@ -82,7 +82,7 @@ export default function App() {
     setLoadingProblems(true);
     try {
       // Calls your: @GetMapping(params = "contestId")
-      const response = await fetch(`/api/problems?contestId=${weekId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/problems?contestId=${weekId}`, {
         credentials: 'include'
       });
       if (!response.ok) throw new Error("Failed to fetch");
@@ -107,7 +107,7 @@ export default function App() {
   const handleLogout = async () => {
     try {
       // 1. Tell Backend to kill the session
-      await fetch('/logout', {
+      await fetch(`${API_BASE_URL}/logout`, {
         method: 'POST', // Spring Security logout requires POST by default
         credentials: 'include' // Send the cookie so it knows WHICH session to kill
       });
@@ -123,7 +123,7 @@ export default function App() {
 
   const handleOAuthLogin = (provider) => {
     // Redirects browser to Spring Boot's OAuth2 endpoint
-    window.location.href = `/oauth2/authorization/${provider}`;
+    window.location.href = `${API_BASE_URL}/oauth2/authorization/${provider}`;
   };
 
   // --- Render Logic ---

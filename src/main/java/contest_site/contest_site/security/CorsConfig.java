@@ -13,7 +13,9 @@ public class CorsConfig implements WebMvcConfigurer {
                         "http://localhost:5173",
                         "http://localhost",
                         "http://72.62.194.233",     // <--- ADD THIS (Your VPS IP)
-                        "http://www.wilbertprojects.me"
+                        "http://www.wilbertprojects.me",
+                        "https://www.wilbertprojects.me",
+                        "https://72.62.194.233"
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowCredentials(true);

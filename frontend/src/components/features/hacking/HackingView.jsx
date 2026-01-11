@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Zap, AlertCircle } from 'lucide-react';
+import {API_BASE_URL} from '../../../config';
 
 export default function HackingView({ submission, onBack }) {
   const [hackTest, setHackTest] = useState('');
@@ -15,7 +16,7 @@ export default function HackingView({ submission, onBack }) {
     if (!submission?.id) return;
 
     setLoading(true);
-    fetch(`/api/submissions/user/${submission.id}`, {
+    fetch(`${API_BASE_URL}/api/submissions/user/${submission.id}`, {
       credentials: 'include' // Important for auth
     })
       .then(res => {

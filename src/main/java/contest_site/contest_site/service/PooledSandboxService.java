@@ -64,6 +64,8 @@ public class PooledSandboxService implements CodeRunnerService {
                 }
                 if (compileProc.exitValue() != 0){
                     submission.setVerdict("Compilation Failed");
+                    String errorMsg=readStream(compileProc.getErrorStream());
+                    System.out.println(errorMsg);
                     return;
                 }
             }

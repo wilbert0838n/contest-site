@@ -28,7 +28,7 @@ public class SecurityConfig {
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(customUserService))
-                        .defaultSuccessUrl("http://localhost:5173", true)
+                        .defaultSuccessUrl("http://localhost", true)
                 )
                 .logout(logout -> logout
                         .logoutUrl("/logout")
