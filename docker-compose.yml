@@ -46,14 +46,6 @@ services:
     networks:
       - contest-net
 
-  cpp-runner-builder:
-    build: ./cpp-runner
-    image: my-cpp-runner:latest
-    container_name: contest_cpp_builder
-    command: [ "true" ]
-    networks:
-      - contest-net
-
 volumes:
   postgres_data:
 

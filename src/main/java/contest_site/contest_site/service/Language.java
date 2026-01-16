@@ -5,7 +5,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum Language {
-    CPP("my-cpp-runner:latest","Main.cpp",5){
+    CPP("wilbert0838n/cpp:latest","Main.cpp",5){
         public String[] getCompileCommand(String containerId) {
             return new String[]{"docker", "exec", containerId, "g++", "-O2", "/app/Main.cpp", "-o", "/app/Main"};
         }

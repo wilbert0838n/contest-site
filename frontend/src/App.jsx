@@ -48,7 +48,8 @@ export default function App() {
   // --- Auth Effects ---
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/me`, {
-      credentials: 'include' // IMPORTANT: Sends the Session Cookie to backend
+      credentials: 'include', // IMPORTANT: Sends the Session Cookie to backend
+        redirect: 'manual',
     })
       .then(response => {
         if (response.ok) return response.json();

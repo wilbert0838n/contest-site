@@ -60,20 +60,12 @@ public class ContainerPoolManager {
     }
 
     private String createContainer(Language lang) throws IOException {
-        String containerName = "sandbox-" + UUID.randomUUID().toString();
-
-        // invoke the container and keep it alive
-        ProcessBuilder pb = new ProcessBuilder(
-                "docker", "run",
-                "-d",
-                "--name", containerName,
+        Process process = Runtime.getRuntime().exec(new String[]{
+                "docker", "run","-d",
                 lang.getDockerImage(),
-                "tail", "-f", "/dev/null"
+                "tail", "-f", "/dev/null"}
         );
-
-        Process p = pb.start();
-        String containerId = new String(p.getInputStream().readAllBytes()).trim();
-        return containerName;
+        return new String(process.getInputStream().readAllBytes()).trim(); //containerId
     }
 
     @PreDestroy
@@ -82,7 +74,7 @@ public class ContainerPoolManager {
             System.out.println("Deleting containers in pool of language "+lang);
             for (String id : containerPools.get(lang)) {
                 try {
-                    new ProcessBuilder("docker", "rm", "-f", id).start();
+                    Runtime.getRuntime().exec(new String[]{"docker", "rm", "-f", id});
                 } catch (IOException e) {
                     System.out.println("Error cleaning up container: "+e.getMessage());
                 }

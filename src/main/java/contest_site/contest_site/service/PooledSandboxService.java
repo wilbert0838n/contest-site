@@ -22,13 +22,13 @@ public class PooledSandboxService implements CodeRunnerService {
 
     private static final String TEMP_DIR = System.getProperty("user.dir") + "/temp_code_folder";
 
-    private String readStream(InputStream stream) {
-        return new BufferedReader(new InputStreamReader(stream))
-                .lines().collect(Collectors.joining("\n"));
+    private String readStream(InputStream stream) throws IOException {
+        return new String(stream.readAllBytes()).trim();
     }
 
     private void runCommand(String... command) throws IOException, InterruptedException {
-        new ProcessBuilder(command).start().waitFor();
+        Process process=Runtime.getRuntime().exec(command);
+        process.waitFor();
     }
 
     @Transactional //auto saves when dirtied
@@ -39,7 +39,6 @@ public class PooledSandboxService implements CodeRunnerService {
         // Setup local file
         String uniqueFileName = "Main_" + UUID.randomUUID() + "."+lang.toString().toLowerCase();
         Path localPath = Paths.get(TEMP_DIR, uniqueFileName);
-        // Ensure dir exists
         new File(TEMP_DIR).mkdirs();
         try {
             Files.write(localPath,submission.getCode().getBytes());
@@ -58,10 +57,12 @@ public class PooledSandboxService implements CodeRunnerService {
             String[] compileCommand= lang.getCompileCommand(containerId);
             if(compileCommand!=null){
                 Process compileProc =  Runtime.getRuntime().exec(compileCommand);
+
                 if (!compileProc.waitFor(10, TimeUnit.SECONDS)){
                     submission.setVerdict("Compile Time exceeded");
                     return;
                 }
+
                 if (compileProc.exitValue() != 0){
                     submission.setVerdict("Compilation Failed");
                     String errorMsg=readStream(compileProc.getErrorStream());
@@ -117,7 +118,7 @@ public class PooledSandboxService implements CodeRunnerService {
         } finally {
             // We destroy the container because it's now dirty
             // The PoolManager has already started creating a replacement in the background
-            new ProcessBuilder("docker", "rm", "-f", containerId).start();
+            Runtime.getRuntime().exec(new String[]{"docker", "rm", "-f", containerId});
             // Delete local temp file
             Files.deleteIfExists(localPath);
         }

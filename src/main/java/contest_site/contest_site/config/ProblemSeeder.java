@@ -18,7 +18,7 @@ public class ProblemSeeder implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) throws Exception {
-        // Only seed if the database is empty
+
         if (problemRepository.count() == 0) {
             System.out.println("--- Seeding Database with Sample Problem ---");
 
