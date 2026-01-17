@@ -1,19 +1,6 @@
 version: '3.8'
 
 services:
-  db:
-    image: postgres:15
-    container_name: contest_db
-    restart: always
-    environment:
-      POSTGRES_DB: contest_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - contest-net
-
   backend:
     build: .
     container_name: contest_backend
@@ -22,21 +9,24 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "8080:8080"
-    depends_on:
-      - db
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/contest_db
-      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_URL: ${DB_URL}
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${DDL_AUTO}
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_REDIRECT_URI: "{baseUrl}/login/oauth2/code/{registrationId}"
+      APP_FRONTEND_URL: ${APP_FRONTEND_URL}
+      SHOW_SQL: ${SHOW_SQL}
     networks:
       - contest-net
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: ${APP_BACKEND_URL}
     container_name: contest_frontend
     restart: always
     ports:
@@ -45,9 +35,6 @@ services:
       - backend
     networks:
       - contest-net
-
-volumes:
-  postgres_data:
 
 networks:
   contest-net:

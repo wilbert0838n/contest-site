@@ -46,23 +46,29 @@ export default function App() {
   };
 
   // --- Auth Effects ---
-  useEffect(() => {
-    fetch(`${API_BASE_URL}/api/me`, {
-      credentials: 'include', // IMPORTANT: Sends the Session Cookie to backend
-        redirect: 'manual',
-    })
-      .then(response => {
-        if (response.ok) return response.json();
-        throw new Error('Not logged in');
-      })
-      .then(data => {
-        setIsLoggedIn(true);
-        setUsername(data.name); // Using the name from Google
-      })
-      .catch(err => {
-        setIsLoggedIn(false);
-      });
-  }, []);
+    useEffect(() => {
+        fetch(`${API_BASE_URL}/api/me`, {
+            credentials: 'include' // Sends the Session Cookie
+        })
+            .then(res => {
+                if (res.ok) return res.json();
+                throw new Error("Not logged in");
+            })
+            .then(data => {
+                // data is now the DB User: { id: 3, username: "wilbert", ... }
+
+                setIsLoggedIn(true);
+                // Note: The field might be 'username' now instead of 'name' depending on your Java Model
+                setUsername(data.username || data.name);
+
+                // CRITICAL STEP: Save the full object so ProblemWorkspace can read 'id'
+                localStorage.setItem('user', JSON.stringify(data));
+            })
+            .catch(() => {
+                setIsLoggedIn(false);
+                localStorage.removeItem('user'); // Clean up if not logged in
+            });
+    }, []);
 
   const handleWeekExpand = async (weekId) => {
     // A. Toggle logic (Close if already open)

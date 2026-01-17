@@ -25,19 +25,33 @@ export default function ProblemWorkspace({ problem, onBack, onSelectSubmission, 
         }
     }, [activeTab, problem.id]);
 
+    const getCurrentUserId = () => {
+        const userStr = localStorage.getItem('user');
+        if (!userStr) return null;
+        try {
+            const user = JSON.parse(userStr);
+            return user.id;
+        } catch (e) {
+            console.error("Error parsing user data", e);
+            return null;
+        }
+    };
+
     const handleRun = async () => {
         if (!isLoggedIn) {
             onShowAuth(); // Open the login modal
             return;       // Stop the function here
         }
 
+        const currentUserId = getCurrentUserId();
+
         setIsRunning(true);
         setVerdict('Running...'); // Reset verdict while running
         setTestResults([]);
 
         const payload = {
-            userId: 2,
-            problemId: 1,
+            userId: currentUserId,
+            problemId: problem.id,
             language: language,
             code: code
         };

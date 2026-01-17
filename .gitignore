@@ -33,11 +33,9 @@ build/
 .vscode/
 
 ### Security & Secrets ###
-src/main/resources/application.properties
-src/main/resources/application.yml
 .env
 
 ### Frontend Specific ###
 frontend/node_modules/
 frontend/dist/
-frontend/.env.development
+frontend/.env
