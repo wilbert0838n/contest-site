@@ -55,13 +55,8 @@ export default function App() {
                 throw new Error("Not logged in");
             })
             .then(data => {
-                // data is now the DB User: { id: 3, username: "wilbert", ... }
-
                 setIsLoggedIn(true);
-                // Note: The field might be 'username' now instead of 'name' depending on your Java Model
                 setUsername(data.username || data.name);
-
-                // CRITICAL STEP: Save the full object so ProblemWorkspace can read 'id'
                 localStorage.setItem('user', JSON.stringify(data));
             })
             .catch(() => {
