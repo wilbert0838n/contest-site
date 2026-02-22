@@ -34,6 +34,7 @@ build/
 
 ### Security & Secrets ###
 .env
+.env.prod
 
 ### Frontend Specific ###
 frontend/node_modules/

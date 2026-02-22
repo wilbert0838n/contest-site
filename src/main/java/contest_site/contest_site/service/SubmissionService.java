@@ -42,7 +42,6 @@ public class SubmissionService {
         return saved;
     }
 
-
     public SubmissionDTO modelToDTO(Submission submission) {
         SubmissionDTO dto = new SubmissionDTO();
 

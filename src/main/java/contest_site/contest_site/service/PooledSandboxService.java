@@ -76,6 +76,7 @@ public class PooledSandboxService implements CodeRunnerService {
             String[] runCommand= lang.getRunCommand(containerId);
             List<TestCase> testCases=submission.getProblem().getTestCases();
 
+
             for(TestCase testCase:testCases){
 
                 Process runProc = Runtime.getRuntime().exec(runCommand);
@@ -84,7 +85,7 @@ public class PooledSandboxService implements CodeRunnerService {
                     // Write the input bytes to the Docker process
                     stdin.write(testCase.getInputContent().getBytes());
                     stdin.flush();
-                    // Closing the stream sends EOF (End of File), telling the program "Input is finished"
+                    // Closing the stream sends EOF, telling the program input is finished
                 } catch (IOException e) {
                     System.out.println("Error while inputting testcase: "+e.getMessage());
                     submission.setVerdict("Error while inputting testcase");
