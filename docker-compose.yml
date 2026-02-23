@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     build: .
@@ -16,21 +14,9 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: ${DDL_AUTO}
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_REDIRECT_URI: "${APP_FRONTEND_URL}/login/oauth2/code/google"
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_REDIRECT_URI: "${APP_BACKEND_URL}/login/oauth2/code/google"
       APP_FRONTEND_URL: ${APP_FRONTEND_URL}
       SHOW_SQL: ${SHOW_SQL}
-    networks:
-      - contest-net
-
-  frontend:
-    build:
-      context: ./frontend
-    container_name: contest_frontend
-    restart: always
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
     networks:
       - contest-net
 
