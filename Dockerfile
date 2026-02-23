@@ -1,4 +1,4 @@
-#Compile time
+# Compile time
 FROM eclipse-temurin:21-jdk-alpine AS build
 WORKDIR /app
 
@@ -10,9 +10,13 @@ RUN ./mvnw dependency:go-offline
 COPY src ./src
 RUN ./mvnw clean package -DskipTests
 
-#Runtime
+# Runtime
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
+
+# Install Docker CLI so backend can talk to Docker daemon
+RUN apk add --no-cache docker-cli
+
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
