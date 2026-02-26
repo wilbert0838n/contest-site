@@ -53,10 +53,8 @@ public class LeaderboardService {
             response.add(new LeaderboardDTO(
                     currentRank++,
                     user.getUsername(),
-                    // NULL CHECK 1: If rating is null, default to 1200
                     user.getRating() != null ? user.getRating() : 1200,
                     0,
-                    // NULL CHECK 2: If problems solved is null, default to 0
                     user.getTotalProblemsSolved() != null ? user.getTotalProblemsSolved() : 0
             ));
         }

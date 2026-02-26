@@ -46,12 +46,43 @@ public class PooledSandboxService implements CodeRunnerService {
             throw new RuntimeException(e);
         }
 
+        // Checker routine (till compilation)
+        String checkerContainerId="";
+        String checkerFileName = "Checker_"+submission.getId()+".cpp";
+        Path checkerPath = Paths.get(TEMP_DIR,checkerFileName);
+        if(submission.getProblem().isMultipleSolutionAllowed()){
+            checkerContainerId=poolManager.getContainer(Language.CPP);
+            try {
+                Files.write(checkerPath, submission.getProblem().getValidatorCode().getBytes());
+                runCommand("docker", "exec", checkerContainerId, "mkdir", "-p", "/app");
+                runCommand("docker", "cp", checkerPath.toString(), checkerContainerId + ":/app/"+Language.CPP.getFileName());
+
+                String[] compileCmd=Language.CPP.getCompileCommand(checkerContainerId);
+                Process compileProcess=Runtime.getRuntime().exec(compileCmd);
+
+                if(!compileProcess.waitFor(10, TimeUnit.SECONDS)){
+                    submission.setVerdict("Server: Checker compile timeout");
+                    return;
+                }
+
+                if(compileProcess.exitValue()!=0){
+                    submission.setVerdict("Server: Checker compilation failed");
+                    String errorMsg=readStream(compileProcess.getErrorStream());
+                    System.out.println(errorMsg);
+                    return;
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e.toString());
+            }
+        }
+
         try {
 
             //Copy code into container
             // Command: docker cp local/Main_123.java containerId:/app/Main.java
             runCommand("docker", "exec", containerId, "mkdir", "-p", "/app"); // Ensure /app exists
             runCommand("docker", "cp", localPath.toString(), containerId + ":/app/"+lang.getFileName());
+            //Checker routine
 
             //Compilation Process Starts Here
             String[] compileCommand= lang.getCompileCommand(containerId);
@@ -76,9 +107,12 @@ public class PooledSandboxService implements CodeRunnerService {
             String[] runCommand= lang.getRunCommand(containerId);
             List<TestCase> testCases=submission.getProblem().getTestCases();
 
+            String [] checkerRunCommand={};
+            if(submission.getProblem().isMultipleSolutionAllowed()){
+                checkerRunCommand =Language.CPP.getRunCommand(checkerContainerId);
+            }
 
             for(TestCase testCase:testCases){
-
                 Process runProc = Runtime.getRuntime().exec(runCommand);
 
                 try (OutputStream stdin = runProc.getOutputStream()) {
@@ -101,9 +135,34 @@ public class PooledSandboxService implements CodeRunnerService {
                 String output = readStream(runProc.getInputStream());
                 String error = readStream(runProc.getErrorStream());
                 if(error.isEmpty()){
-                    if(!output.equals(testCase.getOutputContent())){
-                        submission.setVerdict("Wrong Answer");
-                        return;
+                    if(submission.getProblem().isMultipleSolutionAllowed()){
+                        Process checkerProc = Runtime.getRuntime().exec(checkerRunCommand);
+                        try(OutputStream stdin = checkerProc.getOutputStream()) {
+                            String checkerInput=testCase.getInputContent()+"\n"+output;
+                            stdin.write(checkerInput.getBytes());
+                            stdin.flush();
+                        }catch (IOException e) {
+                            System.out.println("Error while inputting users input " +
+                                    "in code checker process "+e.getMessage());
+                            submission.setVerdict("Server: Checker error in running state");
+                            return;
+                        }
+
+                        if(!checkerProc.waitFor(5, TimeUnit.SECONDS)){
+                            System.out.println("Input to checker process timed out");
+                            submission.setVerdict("Output format not correct");
+                            return;
+                        }
+
+                        if(checkerProc.exitValue() != 0){
+                            submission.setVerdict("Wrong Answer");
+                            return;
+                        }
+                    }else{
+                        if(!output.equals(testCase.getOutputContent())){
+                            submission.setVerdict("Wrong Answer");
+                            return;
+                        }
                     }
                 }
                 else{
@@ -120,8 +179,13 @@ public class PooledSandboxService implements CodeRunnerService {
             // We destroy the container because it's now dirty
             // The PoolManager has already started creating a replacement in the background
             Runtime.getRuntime().exec(new String[]{"docker", "rm", "-f", containerId});
+            if (checkerContainerId != null && !checkerContainerId.isEmpty()) {
+                Runtime.getRuntime().exec(new String[]{"docker", "rm", "-f", checkerContainerId});
+            }
             // Delete local temp file
             Files.deleteIfExists(localPath);
+            Files.deleteIfExists(checkerPath);
+
         }
     }
 
