@@ -28,7 +28,12 @@ public class User {
 
     private Integer rating=1200;
 
+    private Integer totalProblemsSolved=0;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL,fetch = FetchType.LAZY)
     private List<Submission> submissions;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL,fetch = FetchType.LAZY)
+    private List<Leaderboard> leaderboard;
 
 }

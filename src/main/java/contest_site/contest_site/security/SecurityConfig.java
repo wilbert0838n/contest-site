@@ -28,7 +28,8 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/login", "/error", "/api/problems/**").permitAll()
+                        .requestMatchers("/", "/login/**", "/error", "/api/problems/**",
+                                "/api/leaderboard/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2

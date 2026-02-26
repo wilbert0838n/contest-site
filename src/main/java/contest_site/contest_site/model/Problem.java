@@ -22,6 +22,9 @@ public class Problem {
     @Column(nullable = true)
     private String difficulty;
 
+    @Column(nullable = true)
+    private Integer points=0;
+
     @Column(columnDefinition = "TEXT",nullable = false)
     private String description;
 
