@@ -61,10 +61,17 @@ public class ContainerPoolManager {
 
     private String createContainer(Language lang) throws IOException {
         Process process = Runtime.getRuntime().exec(new String[]{
-                "docker", "run","-d",
+                "docker", "run", "-d",
+                "--memory=256m",
+                "--memory-swap=256m",
+                "--cpus=0.5",
+                "--pids-limit=50",
+                "--network=none",
+                "--cap-drop=ALL",
+                "--security-opt=no-new-privileges",
                 lang.getDockerImage(),
-                "tail", "-f", "/dev/null"}
-        );
+                "tail", "-f", "/dev/null"
+        });
         return new String(process.getInputStream().readAllBytes()).trim(); //containerId
     }
 

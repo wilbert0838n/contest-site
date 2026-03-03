@@ -31,7 +31,7 @@ public class PooledSandboxService implements CodeRunnerService {
         process.waitFor();
     }
 
-    @Transactional //auto saves when dirtied
+
     public void runCode(Submission submission) throws IOException, InterruptedException {
         Language lang = submission.getLanguage();
         String containerId = poolManager.getContainer(lang);
