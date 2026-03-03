@@ -1,5 +1,6 @@
 package contest_site.contest_site.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,6 +25,7 @@ public class Leaderboard {
     // Still relates to your actual User table
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(nullable = false)
+    @JsonIgnore
     private User user;
 
     @Column(nullable = false)

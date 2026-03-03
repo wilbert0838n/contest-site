@@ -1,4 +1,5 @@
 package contest_site.contest_site.model;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.List;
@@ -47,11 +48,14 @@ public class Problem {
     private Integer spaceLimit;
 
     @OneToMany(mappedBy = "problem",cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JsonIgnore
     List<Example> examples;
 
     @OneToMany(mappedBy = "problem", cascade = CascadeType.ALL,fetch = FetchType.LAZY)
+    @JsonIgnore
     List<TestCase> testCases;
 
     @OneToMany(mappedBy = "problem")
+    @JsonIgnore
     List<Submission> submissions;
 }

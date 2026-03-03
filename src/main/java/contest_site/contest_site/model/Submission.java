@@ -1,4 +1,5 @@
 package contest_site.contest_site.model;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import contest_site.contest_site.service.Language;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -40,9 +41,11 @@ public class Submission {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(nullable = false)
+    @JsonIgnore
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(nullable = false)
+    @JsonIgnore
     private Problem problem;
 }

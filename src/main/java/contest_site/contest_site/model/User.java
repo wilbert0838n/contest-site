@@ -1,4 +1,5 @@
 package contest_site.contest_site.model;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -31,9 +32,11 @@ public class User {
     private Integer totalProblemsSolved=0;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL,fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<Submission> submissions;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL,fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<Leaderboard> leaderboard;
 
 }
