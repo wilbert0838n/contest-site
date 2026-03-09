@@ -12,13 +12,13 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Primary
 @Service
 @AllArgsConstructor
 public class PooledSandboxService implements CodeRunnerService {
     private final ContainerPoolManager poolManager;
+    private final FileService fileService;
 
     private static final String TEMP_DIR = System.getProperty("user.dir") + "/temp_code_folder";
 
@@ -29,9 +29,10 @@ public class PooledSandboxService implements CodeRunnerService {
     private void runCommand(String... command) throws IOException, InterruptedException {
         Process process=Runtime.getRuntime().exec(command);
         process.waitFor();
+
     }
 
-
+    
     public void runCode(Submission submission) throws IOException, InterruptedException {
         Language lang = submission.getLanguage();
         String containerId = poolManager.getContainer(lang);
@@ -50,6 +51,7 @@ public class PooledSandboxService implements CodeRunnerService {
         String checkerContainerId="";
         String checkerFileName = "Checker_"+submission.getId()+".cpp";
         Path checkerPath = Paths.get(TEMP_DIR,checkerFileName);
+
         if(submission.getProblem().isMultipleSolutionAllowed()){
             checkerContainerId=poolManager.getContainer(Language.CPP);
             try {
