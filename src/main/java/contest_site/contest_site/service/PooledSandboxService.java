@@ -18,7 +18,6 @@ import java.util.concurrent.TimeUnit;
 @AllArgsConstructor
 public class PooledSandboxService implements CodeRunnerService {
     private final ContainerPoolManager poolManager;
-    private final FileService fileService;
 
     private static final String TEMP_DIR = System.getProperty("user.dir") + "/temp_code_folder";
 
@@ -32,7 +31,6 @@ public class PooledSandboxService implements CodeRunnerService {
 
     }
 
-    
     public void runCode(Submission submission) throws IOException, InterruptedException {
         Language lang = submission.getLanguage();
         String containerId = poolManager.getContainer(lang);
